@@ -10,7 +10,6 @@ class Formatters(object):
 	@staticmethod
 	def fromUTC(utcTime, fmt="%Y-%m-%dT%H:%M:%S.%fZ"):
 		""" Convert UTC time string to time.struct_time """
-		# change datetime.datetime to time, return time.struct_time type
 		return datetime.strptime(utcTime, fmt)
 
 	@staticmethod
@@ -64,7 +63,7 @@ class Room(object):
 
 	def __init__(self, roomId):
 		self.roomId = roomId
-		# To store booking for that room for easier access
+		# To store pointer to booking for that room for easier access
 		self.bookings = {}
 
 
@@ -84,6 +83,7 @@ class Hotel(object):
 		with open(fileName, mode='r') as bookingFile:
 			reader = csv.DictReader(bookingFile)
 			for booking in reader:
+				# It should be bulletproof, but task says the data is correct
 				self._addBooking(
 					int(booking['bookingId']), 
 					int(booking['roomId']),
@@ -220,9 +220,9 @@ def test():
 	hotel.printRooms()
 
 	(nextDate, room) = hotel.findNextAvailableBookingSlot(timedelta(hours=5))
-	print "Finding next Availble date for 5 hours " + str(str(nextDate) == "2015-04-02 00:23:05" and room.roomId == 7)
+	print "Finding next Available date for 5 hours " + str(str(nextDate) == "2015-04-02 00:23:05" and room.roomId == 7)
 	(nextDate, room) = hotel.findNextAvailableBookingSlot(timedelta(hours=3))
-	print "Finding next Availble date for 3 hours " + str(str(nextDate) == "2015-04-01 01:27:00" and room.roomId == 242)
+	print "Finding next Available date for 3 hours " + str(str(nextDate) == "2015-04-01 01:27:00" and room.roomId == 242)
 
 
 if __name__ == "__main__":
