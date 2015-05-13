@@ -1,0 +1,63 @@
+### Seeing all bookings for a room.
+	GET on http://bookingApp.com/api/rooms/{roomId}/bookings
+
+	If you use GET on that IP you will have all bookings in e.g. JSON 
+	you might have additional parameters after ? like afterDate
+
+	GET on http://bookingApp.com/api/rooms/{roomId}/bookings?afterDate=2015-01-31T12:34:00
+
+	This will return bookings just after that date
+
+	roomId will be unique identifier for that room
+
+	Sample result:
+
+	{
+		bookings: [
+			{
+				id: 12,
+				startDate: "2015-04-02 00:23:05",
+				endDate: "2015-04-02 01:23:05",
+				clientId: 42,
+				roomId: 12
+			},
+			{...}
+		],
+		... (some other data common to our API e.g. pagination link, generation date etc)
+	}
+
+	Note: you may also consider adding version to your api which will result in something like:
+	http://bookingApp.com/api/1/rooms/{roomId}/bookings
+	or
+	http://bookingApp.com/api/rooms/{roomId}/bookings?version=1
+
+
+### Creating a booking for a room.
+
+	
+	There are at least two possibilities which are:
+
+	PUT on http://bookingApp.com/api/rooms/{roomId}/bookings
+	with data such as 
+	{
+		startDate: (iso format date)
+		endDate: (iso format date)
+		clientName: ...
+	}
+
+	or if you want to keep your api more flat (some like this) it is worth considering to have:
+	PUT on http://bookingApp.com/api/room-bookings
+	with data as above but with roomId as well
+
+	Also you may want to consider using POST as opposite to PUT, but I don't want to go into details now :P
+
+### Canceling a booking for a room.
+
+	DELETE on http://bookingApp.com/api/bookings/{bookingId}
+
+	I think that bookingId should be unique across whole system and there is no need to 
+	give id of the room.
+	You may also consider not using DELETE, but just POST for altering the booking as
+	you may not want to delete anything. But I think it is clearer to use DELETE for such a case
+
+
