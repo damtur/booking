@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import sys
+import getopt
 import csv
 from datetime import timedelta, datetime
 
@@ -166,9 +168,48 @@ class Hotel(object):
 		room.bookings[startTime] = booking
 
 
-def main():
-	test()
-	
+def main(argv):
+	inputFile = 'data/smallSet.csv'
+	durationInSeconds = 3600*3
+
+	try:
+		opts, args = getopt.getopt(argv,"hi:d:t",["ifile="])
+	except getopt.GetoptError:
+		help()
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			help()
+			sys.exit()
+		elif opt in ("-i", "--ifile"):
+			inputFile = arg
+		elif opt in ("-d"):
+			try:
+				durationInSeconds = int(arg)
+			except:
+				help()
+				sys.exit(2)
+		elif opt in ("-t"):
+			test()
+			sys.exit()
+
+	hotel = Hotel()
+	hotel.loadFromFile(inputFile)
+	(nextDate, room) = hotel.findNextAvailableBookingSlot(timedelta(seconds=durationInSeconds))
+	print "Next available slot is " + str(nextDate) + " in room " + str(room.roomId)
+
+
+def help():
+	print """
+Try booking.py -i <inputFile[=data/smallSet.csv]> -d <durationInSeconds[=10800]>
+
+Parameters:
+	-i = input file name (default is 'data/smallSet.csv')
+	-d = duration in seconds (default is 3 hours so 10800)
+	-h = this help
+	-t = test run (will use data/smallSet.csv file and check next available booking slot function)
+"""
+
 
 def test():
 	hotel = Hotel()
@@ -183,5 +224,6 @@ def test():
 	(nextDate, room) = hotel.findNextAvailableBookingSlot(timedelta(hours=3))
 	print "Finding next Availble date for 3 hours " + str(str(nextDate) == "2015-04-01 01:27:00" and room.roomId == 242)
 
-	
-if __name__ =='__main__':main()
+
+if __name__ == "__main__":
+   main(sys.argv[1:])
