@@ -62,6 +62,8 @@ class Room(object):
 
 	def __init__(self, roomId):
 		self.roomId = roomId
+		# To store booking for that room for easier access
+		self.bookings = {}
 
 
 class Hotel(object):
@@ -81,8 +83,8 @@ class Hotel(object):
 			reader = csv.DictReader(bookingFile)
 			for booking in reader:
 				self._addBooking(
-					booking['bookingId'], 
-					booking['roomId'],
+					int(booking['bookingId']), 
+					int(booking['roomId']),
 					booking['bookerName'],
 					Formatters.fromTimeWithTimezoneUTC(booking['startTime']),
 					Formatters.fromTimeWithTimezoneUTC(booking['endTime']))
@@ -91,8 +93,8 @@ class Hotel(object):
 	def printBookings(self):
 		print "Bookings:"
 		for booking in self.bookings:
-			print(str(booking.bookingId) + ", " + str(booking.startTime) + "-" + str(booking.endTime) + 
-				" for " + booking.client.name + " in room " + booking.room.roomId)
+			print(str(booking.bookingId) + ", " + str(booking.startTime) + " - " + str(booking.endTime) + 
+				" for " + booking.client.name + " in room " + str(booking.room.roomId))
 
 	def printRooms(self):
 		print "Rooms:"
@@ -104,6 +106,45 @@ class Hotel(object):
 		for clientName, client in self.clientsByName.iteritems():
 			print str(client.personId) + ": " + client.name
 
+
+	def findNextAvailableBookingSlot(self, duration=timedelta(hours=3), currentDate=datetime.strptime("2015-04-01 00:00", "%Y-%m-%d %H:%M")):
+		if len(self.rooms) < 1: return (None, None)
+
+		# Problem will be split to find next available time slot for each room individually and then return 
+		# the soonest one. 
+		roomsAvailabilityByStartTime = {}
+
+		for room in self.rooms.itervalues():
+			roomBookingsByStart = sorted(room.bookings.items(), key=lambda b: b[1].startTime)
+
+			possibleStartTime = currentDate
+			for startTime, booking in roomBookingsByStart:
+				if booking.endTime < currentDate:
+					continue
+				if booking.startTime < currentDate:
+					# we hit with date current booking move to end
+					possibleStartTime = booking.endTime
+
+				else:
+					# next booking starts in future, check if we can fit before it
+					if possibleStartTime + duration <= booking.startTime:
+						if currentDate == possibleStartTime:
+							# optimization we know that there are no sooner date so return room
+							# as we just need one room
+							return (currentDate, room)
+						else:
+							roomsAvailabilityByStartTime[possibleStartTime] = room
+							break
+					else:
+						possibleStartTime = booking.endTime
+						continue
+			else:
+				# We have to accommodate after last booking
+				roomsAvailabilityByStartTime[possibleStartTime] = room
+
+		sortedRoomBookingsByStart = sorted(roomsAvailabilityByStartTime.items())
+		# Return just room with the soonest available date
+		return sortedRoomBookingsByStart[0] 
 
 	def _addBooking(self, bookingId, roomId, bookerName, startTime, endTime):
 		# Create client if not in database
@@ -122,15 +163,25 @@ class Hotel(object):
 
 		booking = Booking(bookingId, client, room, startTime, endTime)
 		self.bookings.append(booking)
+		room.bookings[startTime] = booking
 
 
 def main():
-	print "Hello world"
+	test()
+	
 
+def test():
 	hotel = Hotel()
 	hotel.loadFromFile('data/smallSet.csv')
+
 	hotel.printBookings()
 	hotel.printClients()
 	hotel.printRooms()
 
+	(nextDate, room) = hotel.findNextAvailableBookingSlot(timedelta(hours=5))
+	print "Finding next Availble date for 5 hours " + str(str(nextDate) == "2015-04-02 00:23:05" and room.roomId == 7)
+	(nextDate, room) = hotel.findNextAvailableBookingSlot(timedelta(hours=3))
+	print "Finding next Availble date for 3 hours " + str(str(nextDate) == "2015-04-01 01:27:00" and room.roomId == 242)
+
+	
 if __name__ =='__main__':main()
